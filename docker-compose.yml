@@ -1,0 +1,52 @@
+services:
+  # PostgreSQL数据库服务
+  postgres:
+    image: postgres:15-alpine
+    # 如果拉取镜像失败，请配置Docker镜像加速器
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: kgjdemodb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./kgjdemodb_1028.dump:/docker-entrypoint-initdb.d/kgjdemodb_1028.dump
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # Flask应用服务
+  flask_app:
+    build: .
+    container_name: flask_app
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: kgjdemodb
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
+
