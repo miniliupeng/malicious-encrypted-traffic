@@ -287,7 +287,56 @@ def get_pcap_label_top5_stats():
             'error': str(e)
         }), 500
 
+@pg_api.route('/log_app/by_all', methods=['GET'])
+def get_log_app_all():
+    """
+    获取 app_log 表中所有的数据，并支持分页。
+    """
+    try:
+        #获取分页参数
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 100)) 
+        offset = (page - 1) * limit
 
+        conn = get_pg_connection()
+        cursor = conn.cursor()
+        
+        #获取数据SQL
+        query = """
+            SELECT 
+                id, log_num, log_time, src, sport, dst, dport, protol, pcap_label 
+            FROM 
+                app_log 
+            ORDER BY 
+                log_time DESC 
+            LIMIT %s OFFSET %s;
+        """
+
+        cursor.execute(query, (limit, offset))
+        logs = cursor.fetchall()
+        
+
+        count_query = "SELECT COUNT(*) FROM app_log;"
+        cursor.execute(count_query)
+        total = cursor.fetchone()['count']
+        
+        cursor.close()
+        conn.close()
+        return jsonify({
+            'success': True,
+            
+            'total': total,
+            'page': page,
+            'limit': limit,
+            'data': logs
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching all log_app : {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 
