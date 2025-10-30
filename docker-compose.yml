@@ -41,7 +41,6 @@ services:
       - .:/app
     networks:
       - app_network
-    restart: unless-stopped
 
 volumes:
   postgres_data:
