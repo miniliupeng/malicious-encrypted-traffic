@@ -340,6 +340,232 @@ def get_log_app_all():
 
 
 
+# --------------------------------------------iie-------------------------------------
+
+# 伪装/混淆流量 统计数量
+@pg_api.route('/multilevel_flow_info/pcap_label_stats', methods=['GET'])
+def get_multilevel_pcap_label_stats():
+	"""
+	统计 multilevel_flow_info 表中每个 pcap_label 的数量
+	"""
+	try:
+		conn = get_pg_connection()
+		cursor = conn.cursor()
+		query = """
+			SELECT 
+				pcap_label, 
+				COUNT(*) as count 
+			FROM 
+				multilevel_flow_info 
+			GROUP BY 
+				pcap_label 
+			ORDER BY 
+				count DESC;
+		"""
+		cursor.execute(query)
+		stats = cursor.fetchall()
+		
+		cursor.close()
+		conn.close()
+
+		return jsonify({
+			'success': True,
+			'data': stats
+		})
+		
+	except Exception as e:
+		current_app.logger.error(f"Error fetching multilevel_flow_info pcap_label stats: {e}")
+		return jsonify({
+			'success': False,
+			'error': str(e)
+		}), 500
+
+
+
+# 隧道行为识别 统计
+@pg_api.route('/behavior_flow_info/pcap_label_stats', methods=['GET'])
+def get_behavior_pcap_label_stats():
+    """
+    统计 behavior_flow_info 表中每个 pcap_label 的数量
+    """
+    try:
+        conn = get_pg_connection()
+        cursor = conn.cursor()
+        query = """
+            SELECT 
+                pcap_label, 
+                COUNT(*) as count 
+            FROM 
+                behavior_flow_info 
+            GROUP BY 
+                pcap_label 
+            ORDER BY 
+                count DESC;
+        """
+        cursor.execute(query)
+        stats = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching behavior_flow_info pcap_label stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# 隧道行为识别 信息抽取
+@pg_api.route('/behavior_flow_info/logs', methods=['GET'])
+def get_behavior_flow_info_logs():
+    """
+    分页获取 behavior_flow_info 表中的全部数据
+    """
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 100))
+        offset = (page - 1) * limit
+
+        conn = get_pg_connection()
+        cursor = conn.cursor()
+
+        query = """
+            SELECT 
+                log_num, log_time, src, sport, dst, dport, protol, pcap_label
+            FROM 
+                behavior_flow_info
+            ORDER BY 
+                log_time DESC
+            LIMIT %s OFFSET %s;
+        """
+        cursor.execute(query, (limit, offset))
+        logs = cursor.fetchall()
+
+        count_query = """
+            SELECT COUNT(*) AS count FROM behavior_flow_info;
+        """
+        cursor.execute(count_query)
+        total = cursor.fetchone()['count']  # ✅ Dict cursor
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'data': logs,
+            'total': total,
+            'page': page,
+            'limit': limit
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        current_app.logger.error(f"Error fetching behavior_flow_info logs: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+# 协议识别 统计
+@pg_api.route('/tunnel_flow_info/pcap_label_stats', methods=['GET'])
+def get_tunnel_pcap_label_stats():
+    """
+    统计 tunnel_flow_info 表中每个 pcap_label 的数量
+    """
+    try:
+        conn = get_pg_connection()
+        cursor = conn.cursor()
+        query = """
+            SELECT 
+                pcap_label, 
+                COUNT(*) as count 
+            FROM 
+                tunnel_flow_info 
+            GROUP BY 
+                pcap_label 
+            ORDER BY 
+                count DESC;
+        """
+        cursor.execute(query)
+        stats = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching tunnel_flow_info pcap_label stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# 协议识别 信息抽取
+@pg_api.route('/tunnel_flow_info/logs', methods=['GET'])
+def get_tunnel_flow_info_logs():
+    """
+    分页获取 tunnel_flow_info 表中的全部数据
+    """
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 100))
+        offset = (page - 1) * limit
+
+        conn = get_pg_connection()
+        cursor = conn.cursor()
+
+        query = """
+            SELECT 
+                log_num, log_time, src, sport, dst, dport, protol, pcap_label
+            FROM 
+                tunnel_flow_info
+            ORDER BY 
+                log_time DESC
+            LIMIT %s OFFSET %s;
+        """
+        cursor.execute(query, (limit, offset))
+        logs = cursor.fetchall()
+
+        count_query = """
+            SELECT COUNT(*) AS count FROM tunnel_flow_info;
+        """
+        cursor.execute(count_query)
+        total = cursor.fetchone()['count']  # ✅ Dict cursor
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'data': logs,
+            'total': total,
+            'page': page,
+            'limit': limit
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        current_app.logger.error(f"Error fetching tunnel_flow_info logs: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 
 
 

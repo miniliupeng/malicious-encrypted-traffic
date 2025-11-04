@@ -33,7 +33,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres123
     ports:
-      - "5000:5000"
+      - "5050:5000"
     depends_on:
       postgres:
         condition: service_healthy
