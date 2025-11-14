@@ -381,7 +381,6 @@ def get_multilevel_pcap_label_stats():
 		}), 500
 
 
-
 # 隧道行为识别 统计
 @pg_api.route('/behavior_flow_info/pcap_label_stats', methods=['GET'])
 def get_behavior_pcap_label_stats():
@@ -567,17 +566,83 @@ def get_tunnel_flow_info_logs():
         }), 500
 
 
+# 伪装/混淆流量 信息抽取并协议映射
+@pg_api.route('/multilevel_flow_info/logs_mapped', methods=['GET'])
+def get_multilevel_flow_info_logs_mapped():
+    """
+    分页获取 multilevel_flow_info 表数据，并将 protol 数字映射为协议名：
+    6 -> tcp, 17 -> udp，其他保持原值
+    """
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 100))
+        offset = (page - 1) * limit
 
+        conn = get_pg_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+        query = """
+            SELECT 
+                log_num, log_time, src, sport, dst, dport, protol, pcap_label
+            FROM 
+                multilevel_flow_info
+            ORDER BY 
+                log_time DESC
+            LIMIT %s OFFSET %s;
+        """
+        cursor.execute(query, (limit, offset))
+        logs = cursor.fetchall()
 
+        mapped_logs = []
+        for row in logs:
+            raw_protocol = row['protol']
 
-    
+            # Convert to int safely for mapping
+            try:
+                protocol_int = int(raw_protocol)
+            except:
+                protocol_int = None
 
+            # Protocol mapping
+            if protocol_int == 6:
+                proto_name = 'tcp'
+            elif protocol_int == 17:
+                proto_name = 'udp'
+            else:
+                proto_name = raw_protocol  # Keep original (string or other numbers)
 
+            mapped_logs.append({
+                'log_num': row['log_num'],
+                'log_time': row['log_time'],
+                'src': row['src'],
+                'sport': row['sport'],
+                'dst': row['dst'],
+                'dport': row['dport'],
+                'protol': proto_name,
+                'pcap_label': row['pcap_label']
+            })
 
+        # Count total rows
+        cursor.execute("SELECT COUNT(*) AS count FROM multilevel_flow_info;")
+        total = cursor.fetchone()['count']
 
+        cursor.close()
+        conn.close()
 
+        return jsonify({
+            'success': True,
+            'data': mapped_logs,
+            'total': total,
+            'page': page,
+            'limit': limit
+        })
 
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        current_app.logger.error(f"Error fetching multilevel_flow_info logs_mapped: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
-        
-       
